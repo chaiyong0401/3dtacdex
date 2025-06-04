@@ -1,0 +1,135 @@
+import numpy as np
+import torch
+
+ARM_POS_SCALE = 580
+ARM_ORI_SCALE = np.pi
+# TACTILE_RAW_DATA_SCALE = [128, 128, 255] # 60
+TACTILE_RAW_DATA_SCALE = [50, 50, 50]
+
+ARM_JOINT_LOWER_LIMIT = torch.tensor([-6.28, -2.09, -2.27, -6.28, -2.09, -6.28])
+ARM_JOINT_UPPER_LIMIT = torch.tensor([6.28, 2.09, 2.27, 6.28, 2.09, 6.28])
+ARM_REL_TRAN_LOWER_LIMIT = torch.ones([3])*-0.025
+ARM_REL_TRAN_UPPER_LIMIT = torch.ones([3])*0.025
+
+HAND_JOINT_LOWER_LIMIT =torch.tensor([-1.047, -0.314, -0.506, -0.366, -1.047, -0.314, -0.506, -0.366, -1.047, -0.314, -0.506, -0.366, -0.349, -0.47 , -1.2  , -1.34 ])
+HAND_JOINT_UPPER_LIMIT = torch.tensor([1.047, 2.23 , 1.885, 2.042, 1.047, 2.23 , 1.885, 2.042, 1.047, 2.23 , 1.885, 2.042, 2.094, 2.443, 1.9  , 1.88 ])
+HAND_REL_JOINT_LOWER_LIMIT = torch.ones([16])*-1
+HAND_REL_JOINT_UPPER_LIMIT = torch.ones([16])*0.25
+
+RGB_DATA_TYPE = 'path'
+HOLODEX_DATA_TYPE = ['actions', 'camera_1_color_image', 'states', 'tactiles'] # actions has to be the first
+ACTION_DATA_TYPE  = ['arm_cmd_ee_quat_pose', 'hand_cmd_abs_joint'] #'arm_ee_quat_pose', 'hand_abs_joint', 'arm_rel_ee_quat_pose', 'hand_rel_joint', 'arm_ee_quat_pose_2_init', 'hand_abs_joint_2_init', 'arm_cmd_ee_quat_pose', 'hand_cmd_abs_joint'
+STATE_DATA_TYPE  = ['arm_ee_quat_pose', 'hand_abs_joint']
+TACTILE_DATA_TYPE = ['3d_canonical_data'] # raw_data pad_image 3d_raw_data 3d_canonical_data
+AUG_DATA_TYPE = [
+    # 'camera_1_color_image_caug_1',
+    # 'camera_1_color_image_caug_2',
+    # 'camera_1_color_image_caug_3',
+    # 'camera_1_color_image_caug_4',
+    # 'camera_1_color_image_caug_5',
+    # 'camera_1_color_image_caug_6',
+    # 'camera_1_color_image_caug_7',
+    # 'camera_1_color_image_caug_8',
+    # 'camera_1_color_image_caug_9',
+    # 'camera_1_color_image_caug_10'
+    # 'camera_1_color_image_saug_1',
+    # 'camera_1_color_image_saug_2',
+    # 'camera_1_color_image_saug_3',
+    # 'camera_1_color_image_saug_4',
+    # 'camera_1_color_image_saug_5',
+    # 'camera_1_color_image_saug_6',
+    # 'camera_1_color_image_saug_7',
+    # 'camera_1_color_image_saug_8',
+    # 'camera_1_color_image_saug_9',
+    # 'camera_1_color_image_saug_10',
+    # 'camera_1_color_image_saug_11',
+    # 'camera_1_color_image_saug_12',
+    # 'camera_1_color_image_saug_13',
+    # 'camera_1_color_image_saug_14',
+    # 'camera_1_color_image_saug_15',
+    # 'camera_1_color_image_saug_16',
+    # 'camera_1_color_image_saug_17',
+    # 'camera_1_color_image_saug_18',
+    # 'camera_1_color_image_saug_19',
+    # 'camera_1_color_image_saug_20',
+    # 'camera_1_color_image_saug_21',
+    # 'camera_1_color_image_saug_22',
+    # 'camera_1_color_image_saug_23',
+    # 'camera_1_color_image_saug_24',
+    # 'camera_1_color_image_saug_25',
+    # 'camera_1_color_image_saug_26',
+    # 'camera_1_color_image_saug_27',
+    # 'camera_1_color_image_saug_28',
+    # 'camera_1_color_image_saug_29',
+    # 'camera_1_color_image_saug_30',
+    # 'camera_1_color_image_saug_31',
+    # 'camera_1_color_image_saug_32',
+    # 'camera_1_color_image_saug_33',
+    # 'camera_1_color_image_saug_34',
+    # 'camera_1_color_image_saug_35',
+    # 'camera_1_color_image_saug_36',
+    # 'camera_1_color_image_saug_37',
+    # 'camera_1_color_image_saug_38',
+    # 'camera_1_color_image_saug_39',
+    # 'camera_1_color_image_saug_40',
+    # 'camera_1_color_image_saug_41',
+    # 'camera_1_color_image_saug_42',
+    # 'camera_1_color_image_saug_43',
+    # 'camera_1_color_image_saug_44',
+    # 'camera_1_color_image_saug_45',
+    # 'camera_1_color_image_saug_46',
+    # 'camera_1_color_image_saug_47',
+    # 'camera_1_color_image_saug_48',
+    # 'camera_1_color_image_saug_49',
+    # 'camera_1_color_image_saug_50',
+    # 'camera_1_color_image_saug_51',
+    # 'camera_1_color_image_saug_52',
+    # 'camera_1_color_image_saug_53',
+    # 'camera_1_color_image_saug_54',
+    # 'camera_1_color_image_saug_55',
+    # 'camera_1_color_image_saug_56',
+    # 'camera_1_color_image_saug_57',
+    # 'camera_1_color_image_saug_58',
+    # 'camera_1_color_image_saug_59',
+    # 'camera_1_color_image_saug_60',
+    # 'camera_1_color_image_saug_61',
+    # 'camera_1_color_image_saug_62',
+    # 'camera_1_color_image_saug_63',
+    # 'camera_1_color_image_saug_64',
+    # 'camera_1_color_image_saug_65',
+    # 'camera_1_color_image_saug_66',
+    # 'camera_1_color_image_saug_67',
+    # 'camera_1_color_image_saug_68',
+    # 'camera_1_color_image_saug_69',
+    # 'camera_1_color_image_saug_70',
+    # 'camera_1_color_image_saug_71',
+    # 'camera_1_color_image_saug_72',
+    # 'camera_1_color_image_saug_73',
+    # 'camera_1_color_image_saug_74',
+    # 'camera_1_color_image_saug_75',
+    # 'camera_1_color_image_saug_76',
+    # 'camera_1_color_image_saug_77',
+    # 'camera_1_color_image_saug_78',
+    # 'camera_1_color_image_saug_79',
+    # 'camera_1_color_image_saug_80',
+    # 'camera_1_color_image_saug_81',
+    # 'camera_1_color_image_saug_82',
+    # 'camera_1_color_image_saug_83',
+    # 'camera_1_color_image_saug_84',
+    # 'camera_1_color_image_saug_85',
+    # 'camera_1_color_image_saug_86',
+    # 'camera_1_color_image_saug_87',
+    # 'camera_1_color_image_saug_88',
+    # 'camera_1_color_image_saug_89',
+    # 'camera_1_color_image_saug_90',
+    # 'camera_1_color_image_saug_91',
+    # 'camera_1_color_image_saug_92',
+    # 'camera_1_color_image_saug_93',
+    # 'camera_1_color_image_saug_94',
+    # 'camera_1_color_image_saug_95',
+    # 'camera_1_color_image_saug_96',
+    # 'camera_1_color_image_saug_97',
+    # 'camera_1_color_image_saug_98',
+    # 'camera_1_color_image_saug_99',
+    # 'camera_1_color_image_saug_100',
+    ]
