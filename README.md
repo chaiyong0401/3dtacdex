@@ -22,7 +22,7 @@ The pretrained encoder is used for learning dexterous, fine-grained and contact-
 Contents of this repo are as follows:
 
 - [Installation](#installation)
-- [Example Dataset](#example-dataset)
+- [Dataset](#dataset)
 - [Pretrain](#pretrain)
     - [Encoder Training](#encoder-training)
     - [Encoder Evaluation](#encoder-evaluation)
@@ -57,7 +57,7 @@ torch_geometric
 tensorboardX==2.5.1
 ```
 
-## Example Dataset
+## Dataset
 You can download example tactile play data from [Google Drive](https://drive.google.com/file/d/1L-cWBaK0il9YnlPADdfovq2Msn-K87QM/view?usp=drive_link). This example dataset is used for running the code. As for custom usage, I highly recommand you collect your own play data follow [T-DEX](https://tactile-dexterity.github.io/), since you may use different dexterous hands, tactile sensors, and distributions.
 ## Pretrain 
 
