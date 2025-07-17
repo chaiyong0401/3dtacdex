@@ -1,4 +1,6 @@
 import numpy as np
+import scipy.spatial.transform as st
+
 
 INTRINSICS = {
         "fx": 909.935,
@@ -96,4 +98,40 @@ PAXINI_THUMB_TIP_COORD = np.array([[ -2.97814,  -4.30109,   4.5    ],
                                     [ -2.06277, -15.9939 ,  -4.5    ],
                                     [ -0.0951 , -21.453  ,  -2.25   ]])/1000
 
+# Coordinates for a single XELA uSPa44 tactile sensor (4x4 taxel grid)  # 수정 필요
+
+tx_flangerot90_tip = np.identity(4)
+# tx_flangerot90_tip[:3, 3] = np.array([-0.0336, 0, 0.247])
+# tx_flangerot90_tip[:3, 3] = np.array([-0.0786, 0, 0.247])
+tx_flangerot90_tip[:3, 3] = np.array([-0.0628, 0, 0.247]) # fixed 
+
+tx_flangerot45_flangerot90 = np.identity(4)
+tx_flangerot45_flangerot90[:3,:3] = st.Rotation.from_euler('x', [np.pi/2]).as_matrix()
+
+tx_flange_flangerot45 = np.identity(4)
+tx_flange_flangerot45[:3,:3] = st.Rotation.from_euler('z', [np.pi/4]).as_matrix()
+
+tx_flange_tip = tx_flange_flangerot45 @ tx_flangerot45_flangerot90 @tx_flangerot90_tip
+tx_tip_flange = np.linalg.inv(tx_flange_tip)
+
+# XELA_TACTILE_ORI_COORD = np.array([0.0, 0.0, 0.0])  # gripper base에서 tip까지 상대 위치
+XELA_TACTILE_ORI_COORD = tx_flange_tip[:3, 3].copy()  # gripper base에서 tip까지 상대 위치
+XELA_USPA44_COORD = np.array([
+    [-1.5, -1.5, 0.0],
+    [-1.5, -0.5, 0.0],
+    [-1.5,  0.5, 0.0],
+    [-1.5,  1.5, 0.0],
+    [-0.5, -1.5, 0.0],
+    [-0.5, -0.5, 0.0],
+    [-0.5,  0.5, 0.0],
+    [-0.5,  1.5, 0.0],
+    [ 0.5, -1.5, 0.0],
+    [ 0.5, -0.5, 0.0],
+    [ 0.5,  0.5, 0.0],
+    [ 0.5,  1.5, 0.0],
+    [ 1.5, -1.5, 0.0],
+    [ 1.5, -0.5, 0.0],
+    [ 1.5,  0.5, 0.0],
+    [ 1.5,  1.5, 0.0],
+])/1000
                             

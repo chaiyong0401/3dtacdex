@@ -6,16 +6,19 @@ import numpy as np
 from scipy.spatial.transform import Rotation as R
 import cv2
 import roma
-from diffusion_policy.real_world.fk.jaka_leap_paxini_kdl import JakaLeapPaxiniKDL
+# from diffusion_policy.real_world.fk.jaka_leap_paxini_kdl import JakaLeapPaxiniKDL
+from diffusion_policy.real_world.fk.umi_xela_kdl import UmiXelaKDL
 from diffusion_policy.real_world.data_preprocess.tactile_processer import tactile_process
 from diffusion_policy.real_world.constants import TACTILE_DATA_TYPE
 
 class TactilePlayDataset(Dataset):
-    def __init__(self, dataset_dir, device, resultant_type=None, aug_type=None, valid=False):
+    # def __init__(self, dataset_dir, device, resultant_type=None, aug_type=None, valid=False):
+    def __init__(self, dataset_dir, device, resultant_type=None, aug_type=None, valid=False, sensor_type="xela"):
         self.resultant_type = resultant_type
         self.aug_type = aug_type
         self.device = device
         self.valid = valid
+        self.sensor_type = sensor_type
 
         total_demo_names = []
         total_data_directory = []
@@ -35,7 +38,16 @@ class TactilePlayDataset(Dataset):
 
         data_type = "tactiles"
         # Initialize the JakaLeapPaxiniKDL, which used for tactile 3D position fk computation
-        jaka_leap_paxini_kdl = JakaLeapPaxiniKDL()
+        # jaka_leap_paxini_kdl = JakaLeapPaxiniKDL()
+        # if self.sensor_type == "paxini":
+        #     self.kdl_model = JakaLeapPaxiniKDL()
+        #     self.force_convert_func = None
+        if self.sensor_type == "xela":
+            self.kdl_model = UmiXelaKDL()
+            # xela sensor force is expressed in link frame
+            self.force_convert_func = lambda x: x
+        else:
+            raise ValueError(f"Unsupported sensor_type: {self.sensor_type}")
 
         all_tactile_data = []
         all_resultant_data = []
@@ -44,10 +56,28 @@ class TactilePlayDataset(Dataset):
             if self.resultant_type is not None:
                 # tactile process is used for tactile data processing, which will return tactile data in canonical representation and resultant data, relative to hand base
                 # the tactile data is represent with canonical rep: 6D pose of sensor origin + 3D position of taxel + 3D force, which correspond to mask index as 9
-                tactile_data, resultant_data = tactile_process(data_directory, data_type, demo, jaka_leap_paxini_kdl, resultant_type=resultant_type, base='hand')
+                # tactile_data, resultant_data = tactile_process(data_directory, data_type, demo, jaka_leap_paxini_kdl, resultant_type=resultant_type, base='hand')
+                tactile_data, resultant_data = tactile_process(
+                    data_directory,
+                    data_type,
+                    demo,
+                    self.kdl_model,
+                    resultant_type=resultant_type,
+                    base='hand',
+                    force_convert_func=self.force_convert_func
+                )
                 all_resultant_data.append(resultant_data)
             else:
-                raise ValueError('No resultant_type not specified')
+                tactile_data = tactile_process(
+                    data_directory,
+                    data_type,
+                    demo,
+                    self.kdl_model,
+                    resultant_type=resultant_type,
+                    base='hand',
+                    force_convert_func=self.force_convert_func
+                )
+                # raise ValueError('No resultant_type not specified')
             all_tactile_data.append(tactile_data)
 
         self.all_tactile_data = np.concatenate(all_tactile_data)
@@ -99,6 +129,7 @@ class TactilePlayDataset(Dataset):
         return len(self.all_tactile_data)
 
     def __getitem__(self, idx):
+        sample = None
         tactile_data = self.all_tactile_data[idx]
         if self.resultant_type is not None:
             resultant_data = self.all_resultant_data[idx]
@@ -113,10 +144,20 @@ class TactilePlayDataset(Dataset):
                     resultant_data, _ = self.convert_4x4matrix_to_6d_pose(resultant_data_transform_matrix)
                     resultant_data = resultant_data.reshape(-1)
                 if TACTILE_DATA_TYPE == ['3d_canonical_data']:
-                    tactile_data[:, 3:6] *= np.pi
+                    tactile_data[:, 3:6] *= np.pi   #  rotation 데이터 증강 -> 손가락의 경우 같은 물체를 잡을 때 센서의 방위가 달라 질 수 있음
                     tactile_data_transform_matrix = self.convert_6d_pose_to_4x4matrix(pos=tactile_data[:, :3], euler=tactile_data[:, 3:6])
                     tactile_data_transform_matrix = random_transform_matrix @ tactile_data_transform_matrix
                     tactile_data[:, :3], tactile_data[:, 3:6] = self.convert_4x4matrix_to_6d_pose(tactile_data_transform_matrix)
                     tactile_data[:, 3:6] /= np.pi
             sample = {'tactile_data': tactile_data, 'resultant_data': resultant_data}
+        else:   # 그리퍼의 경우 증강 rotation x # 7/17
+            # augment the rotation, prevent overfitting
+            # if self.aug_type == 'rotation' and not self.valid:
+                # random_euler_angles = self.random_euler_angles()
+                # random_transform_matrix = self.convert_6d_pose_to_4x4matrix(euler=random_euler_angles)
+                # tactile_data_transform_matrix = self.convert_6d_pose_to_4x4matrix(pos=tactile_data[:, :3], euler=tactile_data[:, 3:6])
+                # tactile_data_transform_matrix = random_transform_matrix @ tactile_data_transform_matrix
+                # tactile_data[:, :3], tactile_data[:, 3:6] = self.convert_4x4matrix_to_6d_pose(tactile_data_transform_matrix)
+                # tactile_data[:, 3:6] /= np.pi
+            sample = {'tactile_data': tactile_data}
         return sample

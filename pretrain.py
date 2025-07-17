@@ -93,7 +93,21 @@ def pretrain(model, optimizer, train_dataloader, test_dataloader, max_epoch, dev
                 if model.resultant_type == 'force':
                     batch['resultant_data'] = batch['resultant_data'].to(device, torch.float32)
                 # convert to gnn batch
-                batch['tactile_data'], _, _, _ = data_to_gnn_batch(batch['tactile_data'], edge_type)
+                # print("tactile_data type:", type(batch['tactile_data']))
+                # print("tactile_data shape:", getattr(batch['tactile_data'], 'shape', 'No shape'))
+                # (512, 1, 16, 3) → (512, 16, 3)
+                tactile_data = batch['tactile_data'].squeeze(1)
+                if tactile_data.dim() == 4 and tactile_data.shape[1] == 1:
+                    tactile_data = tactile_data.squeeze(1)  # -> [B, 16, 3]
+
+                # 만약 이미 3D면 그대로 사용
+                elif tactile_data.dim() == 3:
+                    pass  # [B, 16, 3]
+                else:
+                    raise ValueError(f"Unexpected tactile_data shape: {tactile_data.shape}")
+                # tactile_data = tactile_data.permute(0, 2, 1) # -> [B, 3, 16]
+                print("tactile_data shape:", getattr(tactile_data, 'shape', 'No shape'))
+                batch['tactile_data'], _, _, _ = data_to_gnn_batch(tactile_data, edge_type)
 
                 # forward pass
                 optimizer.zero_grad()
@@ -156,8 +170,24 @@ def main(args):
     eval_ckpt_path = args.eval_ckpt_path
 
     # build datasets and dataloaders, the process of converting raw tactile into canonical representation is done in the dataset
-    train_dataset = TactilePlayDataset(os.path.join(dataset_path, train_dataset_name), device, resultant_type=args.resultant_type, aug_type=args.aug_type, valid=False)
-    test_dataset = TactilePlayDataset(os.path.join(dataset_path, test_dataset_name), device, resultant_type=args.resultant_type, aug_type=args.aug_type, valid=True)
+    # train_dataset = TactilePlayDataset(os.path.join(dataset_path, train_dataset_name), device, resultant_type=args.resultant_type, aug_type=args.aug_type, valid=False)
+    # test_dataset = TactilePlayDataset(os.path.join(dataset_path, test_dataset_name), device, resultant_type=args.resultant_type, aug_type=args.aug_type, valid=True)
+    train_dataset = TactilePlayDataset(
+        os.path.join(dataset_path, train_dataset_name),
+        device,
+        resultant_type=args.resultant_type,
+        aug_type=args.aug_type,
+        valid=False,
+        sensor_type=args.sensor_type,
+    )
+    test_dataset = TactilePlayDataset(
+        os.path.join(dataset_path, test_dataset_name),
+        device,
+        resultant_type=args.resultant_type,
+        aug_type=args.aug_type,
+        valid=True,
+        sensor_type=args.sensor_type,
+    )
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=args.num_workers, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, num_workers=args.num_workers, shuffle=False)

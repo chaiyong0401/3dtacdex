@@ -47,6 +47,7 @@ def build_args():
     parser.add_argument("--edge_type", type=str, default="four+sensor")
     parser.add_argument("--resultant_type", type=str, default=None)
     parser.add_argument("--aug_type", type=str, default=None)
+    parser.add_argument("--sensor_type", type=str, default="xela", help="type of tactile sensor")
 
     parser.add_argument("--encoder", type=str, default="gat")
     parser.add_argument("--decoder", type=str, default="gat")

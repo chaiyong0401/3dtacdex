@@ -20,5 +20,5 @@ python pretrain.py \
     --train_dataset="tactile_play_data_train" \
     --test_dataset="tactile_play_data_test" \
     --exp_name="eval" \
-    --resultant_type="force" \
+    # --resultant_type="force" \
     --eval_ckpt_path="ckpts/all.pt" \

@@ -26,7 +26,7 @@ python pretrain.py \
     --mask_index=9 \
     --train_dataset="tactile_play_data_train" \
     --test_dataset="tactile_play_data_test" \
-    --resultant_type="force" \
     --aug_type="rotation"\
     --exp_name="pretrain" \
 
+# --resultant_type="force" \

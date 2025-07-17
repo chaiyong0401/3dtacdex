@@ -59,6 +59,19 @@ tensorboardX==2.5.1
 
 ## Dataset
 You can download example tactile play data from [Google Drive](https://drive.google.com/file/d/1L-cWBaK0il9YnlPADdfovq2Msn-K87QM/view?usp=drive_link). This example dataset is used for running the code. As for custom usage, I highly recommand you collect your own play data follow [T-DEX](https://tactile-dexterity.github.io/), since you may use different dexterous hands, tactile sensors, and distributions.
+
+If you log tactile data with a `rosbag2` recorder, you can convert the raw bag
+into the format expected by our preprocessing pipeline using
+`tools/convert_xela_rosbag.py`:
+
+```bash
+python tools/convert_xela_rosbag.py <bag_path> output.pth \
+    --topic /xela/sens_stream --sensor-name xela
+```
+The script extracts taxel forces and timestamps from the `SensStream` topic and
+saves them as `dict_raw_data` in `output.pth`.
+
+
 ## Pretrain 
 
 ### Encoder Training
